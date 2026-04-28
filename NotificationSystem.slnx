@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/NotificationSystem.Api/NotificationSystem.Api.csproj" />
+    <Project Path="src/NotificationSystem.Application/NotificationSystem.Application.csproj" />
+    <Project Path="src/NotificationSystem.Contracts/NotificationSystem.Contracts.csproj" />
+    <Project Path="src/NotificationSystem.Domain/NotificationSystem.Domain.csproj" />
+    <Project Path="src/NotificationSystem.Infrastructure/NotificationSystem.Infrastructure.csproj" />
+    <Project Path="src/NotificationSystem.Worker/NotificationSystem.Worker.csproj" />
+  </Folder>
+</Solution>

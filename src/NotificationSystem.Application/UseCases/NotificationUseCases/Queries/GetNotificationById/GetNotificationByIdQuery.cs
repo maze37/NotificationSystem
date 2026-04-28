@@ -1,0 +1,3 @@
+namespace NotificationSystem.Application.UseCases.NotificationUseCases.Queries.GetNotificationById;
+
+public sealed record GetNotificationByIdQuery(Guid NotificationId);

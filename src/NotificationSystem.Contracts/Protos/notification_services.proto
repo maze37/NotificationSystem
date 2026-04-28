@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+option csharp_namespace = "NotificationSystem.Contracts.Grpc";
+
+package notifications;
+
+service TemplateGrpc {
+  rpc RenderTemplate (RenderTemplateRequest) returns (RenderTemplateResponse);
+}
+
+service DeliveryGrpc {
+  rpc SendNotification (SendNotificationRequest) returns (SendNotificationResponse);
+}
+
+message RenderTemplateRequest {
+  string channel = 1;
+  string template_code = 2;
+  string payload_json = 3;
+}
+
+message RenderTemplateResponse {
+  string subject = 1;
+  string body = 2;
+  string metadata_json = 3;
+}
+
+message SendNotificationRequest {
+  string channel = 1;
+  string recipient = 2;
+  string subject = 3;
+  string body = 4;
+  string correlation_id = 5;
+}
+
+message SendNotificationResponse {
+  bool is_success = 1;
+  bool is_transient_failure = 2;
+  string error_message = 3;
+}
