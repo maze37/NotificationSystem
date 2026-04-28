@@ -17,6 +17,8 @@ public sealed class NotificationsController(
     GetNotificationByIdQueryHandler getNotificationByIdHandler,
     SearchNotificationsQueryHandler searchNotificationsHandler) : ControllerBase
 {
+    private const string GetByIdRouteName = "Notifications.GetById";
+
     [HttpPost]
     public async Task<IActionResult> CreateAsync([FromBody] CreateNotificationRequest request, CancellationToken cancellationToken)
     {
@@ -49,10 +51,10 @@ public sealed class NotificationsController(
             return Ok(payload);
         }
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = payload.Notification.Id }, payload);
+        return CreatedAtRoute(GetByIdRouteName, new { id = payload.Notification.Id }, payload);
     }
 
-    [HttpGet("{id:guid}")]
+    [HttpGet("{id:guid}", Name = GetByIdRouteName)]
     public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
         var result = await getNotificationByIdHandler.HandleAsync(new GetNotificationByIdQuery(id), cancellationToken);

@@ -1,8 +1,11 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace NotificationSystem.Infrastructure.Persistence.Migrations;
 
+[DbContext(typeof(NotificationDbContext))]
+[Migration("202604280001_InitialCreate")]
 public partial class InitialCreate : Migration
 {
     protected override void Up(MigrationBuilder migrationBuilder)

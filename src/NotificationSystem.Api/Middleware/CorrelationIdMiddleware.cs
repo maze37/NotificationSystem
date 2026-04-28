@@ -1,3 +1,7 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 using Serilog.Context;
 
 namespace NotificationSystem.Api.Middleware;
