@@ -35,7 +35,7 @@ public static class Inject
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<NotificationDbContext>());
         services.AddScoped<INotificationRepository, NotificationRepository>();
         services.AddScoped<IDeliveryAttemptRepository, DeliveryAttemptRepository>();
-        services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
+        services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
 
         services.AddSingleton<IRabbitMqConnectionProvider, RabbitMqConnectionProvider>();
         services.AddSingleton<RabbitMqTopologyInitializer>();

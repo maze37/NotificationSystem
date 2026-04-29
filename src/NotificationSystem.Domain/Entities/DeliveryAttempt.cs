@@ -1,7 +1,8 @@
+using CSharpFunctionalExtensions;
 using NotificationSystem.Contracts.Results;
 using NotificationSystem.Domain.Enums;
 using NotificationSystem.Domain.Exceptions;
-using NotificationSystem.Contracts.Base;
+using Entity = NotificationSystem.Contracts.Base.Entity;
 
 namespace NotificationSystem.Domain.Entities;
 
@@ -35,27 +36,27 @@ public sealed class DeliveryAttempt : Entity
 
     public DateTimeOffset CreatedWhen { get; private set; }
 
-    public static CSharpFunctionalExtensions.Result<DeliveryAttempt, Error> Start(Guid id, Guid notificationId, int attemptNumber, DateTimeOffset createdWhen)
+    public static Result<DeliveryAttempt, Error> Start(Guid id, Guid notificationId, int attemptNumber, DateTimeOffset createdWhen)
     {
         if (id == Guid.Empty)
         {
-            return CSharpFunctionalExtensions.Result.Failure<DeliveryAttempt, Error>(
+            return Result.Failure<DeliveryAttempt, Error>(
                 Error.Validation("delivery_attempt.id.invalid", "Идентификатор попытки доставки не может быть пустым.", nameof(id)));
         }
 
         if (notificationId == Guid.Empty)
         {
-            return CSharpFunctionalExtensions.Result.Failure<DeliveryAttempt, Error>(
+            return Result.Failure<DeliveryAttempt, Error>(
                 Error.Validation("delivery_attempt.notification_id.invalid", "Идентификатор уведомления не может быть пустым.", nameof(notificationId)));
         }
 
         if (attemptNumber <= 0)
         {
-            return CSharpFunctionalExtensions.Result.Failure<DeliveryAttempt, Error>(
+            return Result.Failure<DeliveryAttempt, Error>(
                 Error.Validation("delivery_attempt.attempt_number.invalid", "Номер попытки должен быть больше нуля.", nameof(attemptNumber)));
         }
 
-        return CSharpFunctionalExtensions.Result.Success<DeliveryAttempt, Error>(
+        return Result.Success<DeliveryAttempt, Error>(
             new DeliveryAttempt(id, notificationId, attemptNumber, createdWhen));
     }
 

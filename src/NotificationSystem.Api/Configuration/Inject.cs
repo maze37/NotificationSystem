@@ -11,7 +11,7 @@ namespace NotificationSystem.Api.Configuration;
 /// <summary>
 /// Централизованная конфигурация API-слоя.
 /// </summary>
-internal static class Inject
+internal static class CompositionExtensions
 {
     /// <summary>
     /// Регистрирует зависимости API, Application и Infrastructure.

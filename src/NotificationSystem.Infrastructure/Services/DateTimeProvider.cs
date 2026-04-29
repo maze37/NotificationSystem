@@ -5,7 +5,7 @@ namespace NotificationSystem.Infrastructure.Services;
 /// <summary>
 /// Системная реализация провайдера времени.
 /// </summary>
-public sealed class SystemDateTimeProvider : IDateTimeProvider
+public sealed class DateTimeProvider : IDateTimeProvider
 {
     public DateTimeOffset UtcNow => DateTimeOffset.UtcNow;
 }

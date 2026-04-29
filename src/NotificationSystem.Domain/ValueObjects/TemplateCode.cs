@@ -1,5 +1,6 @@
-using NotificationSystem.Domain.Exceptions;
+using CSharpFunctionalExtensions;
 using NotificationSystem.Contracts.Constants;
+using NotificationSystem.Contracts.Results;
 
 namespace NotificationSystem.Domain.ValueObjects;
 
@@ -12,19 +13,21 @@ public sealed record TemplateCode
 
     private TemplateCode(string value) => Value = value;
 
-    public static TemplateCode Create(string value)
+    public static Result<TemplateCode, Error> Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new DomainRuleException("Код шаблона обязателен.");
+            return Result.Failure<TemplateCode, Error>(
+                Error.Validation("template_code.required", "Код шаблона обязателен.", nameof(value)));
         }
 
         var normalized = value.Trim();
         if (normalized.Length > LengthConstants.TemplateCode)
         {
-            throw new DomainRuleException($"Код шаблона не должен превышать {LengthConstants.TemplateCode} символов.");
+            return Result.Failure<TemplateCode, Error>(
+                Error.Validation("template_code.length.invalid", $"Код шаблона не должен превышать {LengthConstants.TemplateCode} символов.", nameof(value)));
         }
 
-        return new TemplateCode(normalized);
+        return Result.Success<TemplateCode, Error>(new TemplateCode(normalized));
     }
 }

@@ -11,27 +11,48 @@ using NotificationSystem.Domain.Exceptions;
 
 namespace NotificationSystem.Application.UseCases.NotificationUseCases.Commands.ProcessNotification;
 
-public sealed class ProcessNotificationCommandHandler(
-    INotificationRepository notificationRepository,
-    IDeliveryAttemptRepository deliveryAttemptRepository,
-    IUnitOfWork unitOfWork,
-    ITemplateServiceClient templateServiceClient,
-    IDeliveryServiceClient deliveryServiceClient,
-    IMessagePublisher messagePublisher,
-    IDateTimeProvider dateTimeProvider,
-    IValidator<ProcessNotificationCommand> validator)
+public sealed class ProcessNotificationCommandHandler : ICommandHandler<ProcessNotificationCommand, ProcessNotificationResponse>
 {
+    private readonly INotificationRepository _notificationRepository;
+    private readonly IDeliveryAttemptRepository _deliveryAttemptRepository;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly ITemplateServiceClient _templateServiceClient;
+    private readonly IDeliveryServiceClient _deliveryServiceClient;
+    private readonly IMessagePublisher _messagePublisher;
+    private readonly IDateTimeProvider _dateTimeProvider;
+    private readonly IValidator<ProcessNotificationCommand> _validator;
+
+    public ProcessNotificationCommandHandler(
+        INotificationRepository notificationRepository,
+        IDeliveryAttemptRepository deliveryAttemptRepository,
+        IUnitOfWork unitOfWork,
+        ITemplateServiceClient templateServiceClient,
+        IDeliveryServiceClient deliveryServiceClient,
+        IMessagePublisher messagePublisher,
+        IDateTimeProvider dateTimeProvider,
+        IValidator<ProcessNotificationCommand> validator)
+    {
+        _notificationRepository = notificationRepository;
+        _deliveryAttemptRepository = deliveryAttemptRepository;
+        _unitOfWork = unitOfWork;
+        _templateServiceClient = templateServiceClient;
+        _deliveryServiceClient = deliveryServiceClient;
+        _messagePublisher = messagePublisher;
+        _dateTimeProvider = dateTimeProvider;
+        _validator = validator;
+    }
+
     public async Task<Result<ProcessNotificationResponse, Error>> HandleAsync(
         ProcessNotificationCommand command,
         CancellationToken cancellationToken)
     {
-        var validationResult = await validator.ValidateAsync(command, cancellationToken);
+        var validationResult = await _validator.ValidateAsync(command, cancellationToken);
         if (!validationResult.IsValid)
         {
             return validationResult.ToValidationError<ProcessNotificationResponse>();
         }
 
-        var notification = await notificationRepository.GetByIdAsync(command.NotificationId, cancellationToken);
+        var notification = await _notificationRepository.GetByIdAsync(command.NotificationId, cancellationToken);
         if (notification is null)
         {
             return Result.Failure<ProcessNotificationResponse, Error>(
@@ -49,7 +70,7 @@ public sealed class ProcessNotificationCommandHandler(
                 notification.ErrorMessage));
         }
 
-        var now = dateTimeProvider.UtcNow;
+        var now = _dateTimeProvider.UtcNow;
         int attemptNumber;
         DeliveryAttempt deliveryAttempt;
         try
@@ -69,18 +90,18 @@ public sealed class ProcessNotificationCommandHandler(
                 Error.Validation("notification.domain_rule", ex.Message));
         }
 
-        await deliveryAttemptRepository.AddAsync(deliveryAttempt, cancellationToken);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await _deliveryAttemptRepository.AddAsync(deliveryAttempt, cancellationToken);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         try
         {
-            var rendered = await templateServiceClient.RenderAsync(
+            var rendered = await _templateServiceClient.RenderAsync(
                 notification.Channel,
                 notification.TemplateCode,
                 notification.PayloadJson,
                 cancellationToken);
 
-            var dispatchResult = await deliveryServiceClient.SendAsync(
+            var dispatchResult = await _deliveryServiceClient.SendAsync(
                 new DeliveryDispatchRequest(
                     notification.Channel,
                     notification.Recipient,
@@ -92,8 +113,8 @@ public sealed class ProcessNotificationCommandHandler(
             if (dispatchResult.IsSuccess)
             {
                 deliveryAttempt.MarkDelivered();
-                notification.MarkDelivered(dateTimeProvider.UtcNow);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+                notification.MarkDelivered(_dateTimeProvider.UtcNow);
+                await _unitOfWork.SaveChangesAsync(cancellationToken);
 
                 return Result.Success<ProcessNotificationResponse, Error>(new ProcessNotificationResponse(
                     notification.ToResponse(),
@@ -132,10 +153,10 @@ public sealed class ProcessNotificationCommandHandler(
         if (isTransientFailure && !notification.IsRetryExhausted())
         {
             deliveryAttempt.MarkFailed(errorMessage);
-            notification.MarkFailed(errorMessage, dateTimeProvider.UtcNow);
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            notification.MarkFailed(errorMessage, _dateTimeProvider.UtcNow);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            await messagePublisher.PublishRetryAsync(
+            await _messagePublisher.PublishRetryAsync(
                 notification.Id,
                 notification.CorrelationId,
                 notification.Attempts,
@@ -151,10 +172,10 @@ public sealed class ProcessNotificationCommandHandler(
         }
 
         deliveryAttempt.MarkDeadLettered(errorMessage);
-        notification.MarkDeadLettered(errorMessage, dateTimeProvider.UtcNow);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        notification.MarkDeadLettered(errorMessage, _dateTimeProvider.UtcNow);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        await messagePublisher.PublishDeadLetterAsync(
+        await _messagePublisher.PublishDeadLetterAsync(
             notification.Id,
             notification.CorrelationId,
             errorMessage,

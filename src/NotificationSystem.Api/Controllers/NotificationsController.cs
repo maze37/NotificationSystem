@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using NotificationSystem.Api.Extensions;
+using NotificationSystem.Application.Abstractions;
 using NotificationSystem.Contracts.Api.Notifications;
 using NotificationSystem.Contracts.Results;
 using NotificationSystem.Api.Middleware;
@@ -13,9 +15,9 @@ namespace NotificationSystem.Api.Controllers;
 [ApiController]
 [Route("api/[controller]")]
 public sealed class NotificationsController(
-    CreateNotificationCommandHandler createNotificationHandler,
-    GetNotificationByIdQueryHandler getNotificationByIdHandler,
-    SearchNotificationsQueryHandler searchNotificationsHandler) : ControllerBase
+    ICommandHandler<CreateNotificationCommand, CreateNotificationResponse> createNotificationHandler,
+    IQueryHandler<GetNotificationByIdQuery, NotificationResponse> getNotificationByIdHandler,
+    IQueryHandler<SearchNotificationsQuery, IReadOnlyCollection<NotificationResponse>> searchNotificationsHandler) : ControllerBase
 {
     private const string GetByIdRouteName = "Notifications.GetById";
 
@@ -24,7 +26,7 @@ public sealed class NotificationsController(
     {
         if (!Enum.TryParse<NotificationChannel>(request.Channel, true, out var channel))
         {
-            return BadRequest(Error.Validation("notification.channel.invalid", "Некорректный канал уведомления.", nameof(request.Channel)));
+            return this.ToErrorResponse(Error.Validation("notification.channel.invalid", "Некорректный канал уведомления.", nameof(request.Channel)));
         }
 
         var correlationId = request.CorrelationId
@@ -42,16 +44,16 @@ public sealed class NotificationsController(
 
         if (result.IsFailure)
         {
-            return ToProblem(result.Error);
+            return this.ToErrorResponse(result.Error);
         }
 
         var payload = result.Value;
         if (payload.IsDuplicate)
         {
-            return Ok(payload);
+            return Ok(Envelope<CreateNotificationResponse>.Success(payload));
         }
 
-        return CreatedAtRoute(GetByIdRouteName, new { id = payload.Notification.Id }, payload);
+        return CreatedAtRoute(GetByIdRouteName, new { id = payload.Notification.Id }, Envelope<CreateNotificationResponse>.Success(payload));
     }
 
     [HttpGet("{id:guid}", Name = GetByIdRouteName)]
@@ -60,10 +62,10 @@ public sealed class NotificationsController(
         var result = await getNotificationByIdHandler.HandleAsync(new GetNotificationByIdQuery(id), cancellationToken);
         if (result.IsFailure)
         {
-            return ToProblem(result.Error);
+            return this.ToErrorResponse(result.Error);
         }
 
-        return Ok(result.Value);
+        return Ok(Envelope<NotificationResponse>.Success(result.Value));
     }
 
     [HttpGet]
@@ -80,20 +82,9 @@ public sealed class NotificationsController(
 
         if (result.IsFailure)
         {
-            return ToProblem(result.Error);
+            return this.ToErrorResponse(result.Error);
         }
 
-        return Ok(result.Value);
-    }
-
-    private IActionResult ToProblem(Error error)
-    {
-        return error.Type switch
-        {
-            "validation" => BadRequest(error),
-            "not_found" => NotFound(error),
-            "conflict" => Conflict(error),
-            _ => StatusCode(StatusCodes.Status500InternalServerError, error)
-        };
+        return Ok(Envelope<IReadOnlyCollection<NotificationResponse>>.Success(result.Value));
     }
 }

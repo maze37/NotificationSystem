@@ -11,7 +11,7 @@ namespace NotificationSystem.Worker;
 /// <summary>
 /// Централизованная конфигурация Worker-слоя.
 /// </summary>
-internal static class Inject
+internal static class CompositionExtensions
 {
     /// <summary>
     /// Регистрирует зависимости воркера и фоновые процессы.

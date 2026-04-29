@@ -1,5 +1,6 @@
-using NotificationSystem.Domain.Exceptions;
+using CSharpFunctionalExtensions;
 using NotificationSystem.Contracts.Constants;
+using NotificationSystem.Contracts.Results;
 
 namespace NotificationSystem.Domain.ValueObjects;
 
@@ -12,19 +13,21 @@ public sealed record NotificationRecipient
 
     private NotificationRecipient(string value) => Value = value;
 
-    public static NotificationRecipient Create(string value)
+    public static Result<NotificationRecipient, Error> Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new DomainRuleException("Получатель обязателен.");
+            return Result.Failure<NotificationRecipient, Error>(
+                Error.Validation("notification_recipient.required", "Получатель обязателен.", nameof(value)));
         }
 
         var normalized = value.Trim();
         if (normalized.Length > LengthConstants.Recipient)
         {
-            throw new DomainRuleException($"Получатель не должен превышать {LengthConstants.Recipient} символов.");
+            return Result.Failure<NotificationRecipient, Error>(
+                Error.Validation("notification_recipient.length.invalid", $"Получатель не должен превышать {LengthConstants.Recipient} символов.", nameof(value)));
         }
 
-        return new NotificationRecipient(normalized);
+        return Result.Success<NotificationRecipient, Error>(new NotificationRecipient(normalized));
     }
 }

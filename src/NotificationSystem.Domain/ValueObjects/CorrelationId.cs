@@ -1,5 +1,6 @@
-using NotificationSystem.Domain.Exceptions;
+using CSharpFunctionalExtensions;
 using NotificationSystem.Contracts.Constants;
+using NotificationSystem.Contracts.Results;
 
 namespace NotificationSystem.Domain.ValueObjects;
 
@@ -12,19 +13,21 @@ public sealed record CorrelationId
 
     private CorrelationId(string value) => Value = value;
 
-    public static CorrelationId Create(string value)
+    public static Result<CorrelationId, Error> Create(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new DomainRuleException("CorrelationId обязателен.");
+            return Result.Failure<CorrelationId, Error>(
+                Error.Validation("correlation_id.required", "CorrelationId обязателен.", nameof(value)));
         }
 
         var normalized = value.Trim();
         if (normalized.Length > LengthConstants.CorrelationId)
         {
-            throw new DomainRuleException($"CorrelationId не должен превышать {LengthConstants.CorrelationId} символов.");
+            return Result.Failure<CorrelationId, Error>(
+                Error.Validation("correlation_id.length.invalid", $"CorrelationId не должен превышать {LengthConstants.CorrelationId} символов.", nameof(value)));
         }
 
-        return new CorrelationId(normalized);
+        return Result.Success<CorrelationId, Error>(new CorrelationId(normalized));
     }
 }

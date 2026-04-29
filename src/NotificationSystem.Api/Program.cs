@@ -1,4 +1,3 @@
-using NotificationSystem.Api;
 using NotificationSystem.Api.Configuration;
 using Serilog;
 

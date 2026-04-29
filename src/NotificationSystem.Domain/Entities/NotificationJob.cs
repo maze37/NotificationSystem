@@ -1,3 +1,4 @@
+using CSharpFunctionalExtensions;
 using NotificationSystem.Contracts.Results;
 using NotificationSystem.Domain.Enums;
 using NotificationSystem.Domain.Exceptions;
@@ -60,7 +61,7 @@ public sealed class NotificationJob : AggregateRoot
 
     public ICollection<DeliveryAttempt> DeliveryAttempts { get; private set; } = new List<DeliveryAttempt>();
 
-    public static CSharpFunctionalExtensions.Result<NotificationJob, Error> Create(
+    public static Result<NotificationJob, Error> Create(
         Guid id,
         NotificationChannel channel,
         string recipient,
@@ -71,13 +72,13 @@ public sealed class NotificationJob : AggregateRoot
     {
         if (id == Guid.Empty)
         {
-            return CSharpFunctionalExtensions.Result.Failure<NotificationJob, Error>(
+            return Result.Failure<NotificationJob, Error>(
                 Error.Validation("notification.id.invalid", "Идентификатор уведомления не может быть пустым.", nameof(id)));
         }
 
         if (string.IsNullOrWhiteSpace(payloadJson))
         {
-            return CSharpFunctionalExtensions.Result.Failure<NotificationJob, Error>(
+            return Result.Failure<NotificationJob, Error>(
                 Error.Validation("notification.payload.required", "Payload JSON обязателен.", nameof(payloadJson)));
         }
         try
@@ -86,18 +87,18 @@ public sealed class NotificationJob : AggregateRoot
             var templateCodeValue = TemplateCodeValueObject.Create(templateCode);
             var correlationIdValue = CorrelationIdValueObject.Create(correlationId);
 
-            return CSharpFunctionalExtensions.Result.Success<NotificationJob, Error>(new NotificationJob(
+            return Result.Success<NotificationJob, Error>(new NotificationJob(
                 id,
                 channel,
-                recipientValue.Value,
-                templateCodeValue.Value,
+                recipientValue.Value.Value,
+                templateCodeValue.Value.Value,
                 payloadJson,
-                correlationIdValue.Value,
+                correlationIdValue.Value.Value,
                 createdWhen));
         }
         catch (DomainRuleException ex)
         {
-            return CSharpFunctionalExtensions.Result.Failure<NotificationJob, Error>(
+            return Result.Failure<NotificationJob, Error>(
                 Error.Validation("notification.domain_rule", ex.Message));
         }
     }

@@ -14,11 +14,11 @@
 - `src/NotificationSystem.Domain`
   - доменные сущности, value objects, инварианты, правила переходов статусов.
 - `src/NotificationSystem.Application`
-  - use-cases, порты, валидаторы, сценарии обработки, `Result<..., Error>` без внешних DTO/response-моделей.
+  - use-cases, `ICommand/IQuery` + handlers, валидаторы, сценарии обработки, `Result<..., Error>`.
 - `src/NotificationSystem.Infrastructure`
   - EF Core, репозитории, миграции, RabbitMQ, gRPC-адаптеры, DI.
 - `src/NotificationSystem.Contracts`
-  - все внешние контракты: API request/response модели, результаты use-case'ов на границе приложения, события, protobuf, константы, модель `Error`, базовые классы `Entity/AggregateRoot`.
+  - все внешние контракты: API request/response модели, `Envelope`, `Error`, события, protobuf, константы, базовые классы `Entity/AggregateRoot`.
 - `src/NotificationSystem.Api`
   - REST API, middleware, health checks, swagger, logging.
 - `src/NotificationSystem.Worker`
@@ -29,6 +29,16 @@
 - `POST /api/notifications` — создание задания на отправку уведомления.
 - `GET /api/notifications/{id}` — получение уведомления по идентификатору.
 - `GET /api/notifications?status=&channel=&from=&to=` — фильтрация уведомлений.
+
+## Формат API-ответа
+
+- Успех: `{ result, errors: null, timeGenerated }`
+- Ошибка: `{ result: null, errors, timeGenerated }`
+- Маппинг ошибок:
+  - `validation -> 400`
+  - `not_found -> 404`
+  - `conflict -> 409`
+  - `failure -> 500`
 
 ## Граница слоев
 
@@ -69,6 +79,7 @@
 ## Локальный запуск
 
 ```bash
+docker compose down -v
 docker compose up --build
 ```
 
@@ -87,7 +98,14 @@ dotnet build NotificationSystem.slnx
 - `Api:Port` (для API-хоста)
 - `Seq` (опционально)
 
+Локальный PostgreSQL из compose доступен на `localhost:5434`.
+
 Адреса для проверки работоспособности:
 - Swagger: [http://localhost:8080/swagger](http://localhost:8080/swagger)
 - RabbitMQ UI: [http://localhost:15672](http://localhost:15672)
 - Seq: [http://localhost:5341](http://localhost:5341)
+
+Быстрый smoke-check:
+1. `POST /api/notifications` с `recipient=delivered@example.com`.
+2. `GET /api/notifications/{id}` до статуса `Delivered`.
+3. Проверить логи по `CorrelationId` в Seq.
