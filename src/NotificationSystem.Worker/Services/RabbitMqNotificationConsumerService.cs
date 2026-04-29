@@ -10,6 +10,9 @@ using Serilog.Context;
 
 namespace NotificationSystem.Worker.Services;
 
+/// <summary>
+/// Фоновый консьюмер RabbitMQ, который запускает обработку уведомлений.
+/// </summary>
 public sealed class RabbitMqNotificationConsumerService(
     IRabbitMqConnectionProvider connectionProvider,
     IServiceScopeFactory scopeFactory,
@@ -19,6 +22,9 @@ public sealed class RabbitMqNotificationConsumerService(
     private AsyncEventingBasicConsumer? _consumer;
     private CancellationToken _stoppingToken;
 
+    /// <summary>
+    /// Поднимает подписку на очередь и держит сервис активным до остановки.
+    /// </summary>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _stoppingToken = stoppingToken;
@@ -40,6 +46,9 @@ public sealed class RabbitMqNotificationConsumerService(
         }
     }
 
+    /// <summary>
+    /// Освобождает ресурсы канала и отписывается от событий.
+    /// </summary>
     public override void Dispose()
     {
         if (_consumer is not null)
@@ -51,6 +60,9 @@ public sealed class RabbitMqNotificationConsumerService(
         base.Dispose();
     }
 
+    /// <summary>
+    /// Обрабатывает одно входящее сообщение из очереди.
+    /// </summary>
     private async Task OnReceivedAsync(object sender, BasicDeliverEventArgs args)
     {
         if (_channel is null)

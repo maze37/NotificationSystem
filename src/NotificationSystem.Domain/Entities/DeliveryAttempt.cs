@@ -24,18 +24,39 @@ public sealed class DeliveryAttempt : Entity
         CreatedWhen = createdWhen;
     }
 
+    /// <summary>
+    /// Идентификатор уведомления, к которому относится попытка.
+    /// </summary>
     public Guid NotificationId { get; private set; }
 
+    /// <summary>
+    /// Навигация к уведомлению.
+    /// </summary>
     public NotificationJob? Notification { get; private set; }
 
+    /// <summary>
+    /// Порядковый номер попытки.
+    /// </summary>
     public int AttemptNumber { get; private set; }
 
+    /// <summary>
+    /// Результат текущей попытки.
+    /// </summary>
     public NotificationStatus Status { get; private set; }
 
+    /// <summary>
+    /// Ошибка попытки, если доставка неуспешна.
+    /// </summary>
     public string? ErrorMessage { get; private set; }
 
+    /// <summary>
+    /// Время создания попытки.
+    /// </summary>
     public DateTimeOffset CreatedWhen { get; private set; }
 
+    /// <summary>
+    /// Создает новую попытку доставки.
+    /// </summary>
     public static Result<DeliveryAttempt, Error> Start(Guid id, Guid notificationId, int attemptNumber, DateTimeOffset createdWhen)
     {
         if (id == Guid.Empty)
@@ -60,6 +81,9 @@ public sealed class DeliveryAttempt : Entity
             new DeliveryAttempt(id, notificationId, attemptNumber, createdWhen));
     }
 
+    /// <summary>
+    /// Помечает попытку как успешную.
+    /// </summary>
     public void MarkDelivered()
     {
         EnsureProcessingTransition(NotificationStatus.Delivered);
@@ -67,6 +91,9 @@ public sealed class DeliveryAttempt : Entity
         ErrorMessage = null;
     }
 
+    /// <summary>
+    /// Помечает попытку как неуспешную.
+    /// </summary>
     public void MarkFailed(string errorMessage)
     {
         EnsureProcessingTransition(NotificationStatus.Failed);
@@ -74,6 +101,9 @@ public sealed class DeliveryAttempt : Entity
         ErrorMessage = errorMessage;
     }
 
+    /// <summary>
+    /// Помечает попытку как отправленную в dead-letter.
+    /// </summary>
     public void MarkDeadLettered(string errorMessage)
     {
         EnsureProcessingTransition(NotificationStatus.DeadLettered);

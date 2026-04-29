@@ -8,6 +8,9 @@ using NotificationSystem.Domain.Entities;
 
 namespace NotificationSystem.Application.UseCases.NotificationUseCases.Commands.CreateNotification;
 
+/// <summary>
+/// Обрабатывает сценарий создания уведомления и постановки его в очередь.
+/// </summary>
 public sealed class CreateNotificationCommandHandler : ICommandHandler<CreateNotificationCommand, CreateNotificationResponse>
 {
     private readonly INotificationRepository _notificationRepository;
@@ -30,6 +33,9 @@ public sealed class CreateNotificationCommandHandler : ICommandHandler<CreateNot
         _validator = validator;
     }
 
+    /// <summary>
+    /// Валидирует входные данные, создает уведомление, сохраняет его и публикует событие в очередь.
+    /// </summary>
     public async Task<Result<CreateNotificationResponse, Error>> HandleAsync(
         CreateNotificationCommand command,
         CancellationToken cancellationToken)

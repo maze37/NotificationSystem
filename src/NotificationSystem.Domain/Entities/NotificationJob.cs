@@ -14,6 +14,9 @@ namespace NotificationSystem.Domain.Entities;
 /// </summary>
 public sealed class NotificationJob : AggregateRoot
 {
+    /// <summary>
+    /// Лимит попыток доставки по умолчанию.
+    /// </summary>
     public const int DefaultMaxAttempts = 5;
 
     private NotificationJob()
@@ -39,28 +42,64 @@ public sealed class NotificationJob : AggregateRoot
         UpdatedWhen = createdWhen;
     }
 
+    /// <summary>
+    /// Текущий канал отправки уведомления.
+    /// </summary>
     public NotificationChannel Channel { get; private set; }
 
+    /// <summary>
+    /// Получатель уведомления (email, push token или webhook URL).
+    /// </summary>
     public string Recipient { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Код шаблона, по которому формируется сообщение.
+    /// </summary>
     public string TemplateCode { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// JSON-полезная нагрузка для рендера шаблона.
+    /// </summary>
     public string PayloadJson { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// Текущий статус уведомления в жизненном цикле.
+    /// </summary>
     public NotificationStatus Status { get; private set; }
 
+    /// <summary>
+    /// Количество уже выполненных попыток доставки.
+    /// </summary>
     public int Attempts { get; private set; }
 
+    /// <summary>
+    /// Время создания задания.
+    /// </summary>
     public DateTimeOffset CreatedWhen { get; private set; }
 
+    /// <summary>
+    /// Время последнего изменения.
+    /// </summary>
     public DateTimeOffset UpdatedWhen { get; private set; }
 
+    /// <summary>
+    /// Последняя ошибка доставки, если она была.
+    /// </summary>
     public string? ErrorMessage { get; private set; }
 
+    /// <summary>
+    /// Идентификатор корреляции для идемпотентности и трассировки.
+    /// </summary>
     public string CorrelationId { get; private set; } = string.Empty;
 
+    /// <summary>
+    /// История попыток доставки.
+    /// </summary>
     public ICollection<DeliveryAttempt> DeliveryAttempts { get; private set; } = new List<DeliveryAttempt>();
 
+    /// <summary>
+    /// Создает новое уведомление после проверки доменных правил.
+    /// </summary>
     public static Result<NotificationJob, Error> Create(
         Guid id,
         NotificationChannel channel,
@@ -103,6 +142,9 @@ public sealed class NotificationJob : AggregateRoot
         }
     }
 
+    /// <summary>
+    /// Переводит уведомление в состояние Queued.
+    /// </summary>
     public void MarkQueued(DateTimeOffset updatedWhen)
     {
         EnsureTransition(NotificationStatus.Created, NotificationStatus.Queued);
@@ -110,6 +152,9 @@ public sealed class NotificationJob : AggregateRoot
         UpdatedWhen = updatedWhen;
     }
 
+    /// <summary>
+    /// Запускает обработку уведомления и увеличивает счетчик попыток.
+    /// </summary>
     public int StartProcessing(DateTimeOffset updatedWhen, int maxAttempts = DefaultMaxAttempts)
     {
         if (maxAttempts <= 0)
@@ -139,6 +184,9 @@ public sealed class NotificationJob : AggregateRoot
         return Attempts;
     }
 
+    /// <summary>
+    /// Помечает уведомление как успешно доставленное.
+    /// </summary>
     public void MarkDelivered(DateTimeOffset updatedWhen)
     {
         EnsureTransition(NotificationStatus.Processing, NotificationStatus.Delivered);
@@ -147,6 +195,9 @@ public sealed class NotificationJob : AggregateRoot
         UpdatedWhen = updatedWhen;
     }
 
+    /// <summary>
+    /// Помечает уведомление как неуспешное на текущей попытке.
+    /// </summary>
     public void MarkFailed(string errorMessage, DateTimeOffset updatedWhen)
     {
         EnsureTransition(NotificationStatus.Processing, NotificationStatus.Failed);
@@ -155,6 +206,9 @@ public sealed class NotificationJob : AggregateRoot
         UpdatedWhen = updatedWhen;
     }
 
+    /// <summary>
+    /// Помечает уведомление как окончательно недоставленное (DLQ).
+    /// </summary>
     public void MarkDeadLettered(string errorMessage, DateTimeOffset updatedWhen)
     {
         if (Status != NotificationStatus.Processing && !IsRetryExhausted(DefaultMaxAttempts))
@@ -167,8 +221,14 @@ public sealed class NotificationJob : AggregateRoot
         UpdatedWhen = updatedWhen;
     }
 
+    /// <summary>
+    /// Возвращает true, если лимит попыток исчерпан.
+    /// </summary>
     public bool IsRetryExhausted(int maxAttempts = DefaultMaxAttempts) => Attempts >= maxAttempts;
 
+    /// <summary>
+    /// Возвращает true, если уведомление можно отправить повторно.
+    /// </summary>
     public bool CanRetry(int maxAttempts = DefaultMaxAttempts) =>
         Status is NotificationStatus.Failed && Attempts < maxAttempts;
 

@@ -12,6 +12,9 @@ using NotificationSystem.Domain.Enums;
 
 namespace NotificationSystem.Api.Controllers;
 
+/// <summary>
+/// HTTP-точки для создания и чтения уведомлений.
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public sealed class NotificationsController(
@@ -21,6 +24,9 @@ public sealed class NotificationsController(
 {
     private const string GetByIdRouteName = "Notifications.GetById";
 
+    /// <summary>
+    /// Создает новое уведомление и ставит его в обработку.
+    /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateAsync([FromBody] CreateNotificationRequest request, CancellationToken cancellationToken)
     {
@@ -56,6 +62,9 @@ public sealed class NotificationsController(
         return CreatedAtRoute(GetByIdRouteName, new { id = payload.Notification.Id }, Envelope<CreateNotificationResponse>.Success(payload));
     }
 
+    /// <summary>
+    /// Возвращает уведомление по идентификатору.
+    /// </summary>
     [HttpGet("{id:guid}", Name = GetByIdRouteName)]
     public async Task<IActionResult> GetByIdAsync(Guid id, CancellationToken cancellationToken)
     {
@@ -68,6 +77,9 @@ public sealed class NotificationsController(
         return Ok(Envelope<NotificationResponse>.Success(result.Value));
     }
 
+    /// <summary>
+    /// Ищет уведомления по статусу, каналу и диапазону дат.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> SearchAsync(
         [FromQuery] NotificationStatus? status,

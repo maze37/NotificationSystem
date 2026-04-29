@@ -6,10 +6,16 @@ using RabbitMQ.Client;
 
 namespace NotificationSystem.Infrastructure.Messaging;
 
+/// <summary>
+/// Публикует доменные события уведомлений в RabbitMQ.
+/// </summary>
 public sealed class RabbitMqMessagePublisher(IRabbitMqConnectionProvider connectionProvider) : IMessagePublisher
 {
     private static readonly JsonSerializerOptions SerializerOptions = new(JsonSerializerDefaults.Web);
 
+    /// <summary>
+    /// Публикует событие создания уведомления.
+    /// </summary>
     public Task PublishCreatedAsync(Guid notificationId, string correlationId, CancellationToken cancellationToken) =>
         PublishAsync(
             MessagingTopology.ExchangeName,
@@ -18,6 +24,9 @@ public sealed class RabbitMqMessagePublisher(IRabbitMqConnectionProvider connect
             correlationId,
             cancellationToken);
 
+    /// <summary>
+    /// Публикует событие повторной попытки в соответствующую retry-очередь.
+    /// </summary>
     public Task PublishRetryAsync(Guid notificationId, string correlationId, int currentAttempt, CancellationToken cancellationToken)
     {
         var retryIndex = Math.Clamp(currentAttempt, 1, MessagingTopology.RetryQueues.Count);
@@ -31,6 +40,9 @@ public sealed class RabbitMqMessagePublisher(IRabbitMqConnectionProvider connect
             cancellationToken);
     }
 
+    /// <summary>
+    /// Публикует событие в dead-letter exchange.
+    /// </summary>
     public Task PublishDeadLetterAsync(Guid notificationId, string correlationId, string reason, CancellationToken cancellationToken) =>
         PublishAsync(
             MessagingTopology.DeadLetterExchangeName,
